@@ -16,7 +16,8 @@ from typing import Optional
 HOST = "127.0.0.1"
 PORT = 47832
 ENCODING = "utf-8"
-RETRY_ATTEMPTS = 5
+# More generous retries to allow initial worker start/imports
+RETRY_ATTEMPTS = 10
 RETRY_DELAY = 0.5  # seconds
 
 
@@ -39,7 +40,7 @@ def send_request(file_path: str) -> str:
     last_err: Optional[Exception] = None
     for attempt in range(RETRY_ATTEMPTS):
         try:
-            with socket.create_connection((HOST, PORT), timeout=5) as sock:
+            with socket.create_connection((HOST, PORT), timeout=10) as sock:
                 sock.sendall((json.dumps(req) + "\n").encode(ENCODING))
                 resp = sock.recv(65536)
                 return resp.decode(ENCODING, errors="replace").strip()
