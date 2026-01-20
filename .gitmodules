@@ -1,0 +1,6 @@
+[submodule "external_libraries/python4delphi"]
+	path = external_libraries/python4delphi
+	url = https://github.com/pyscripter/python4delphi.git
+[submodule "external_libraries/python-3.11.9-embed-amd64"]
+	path = external_libraries/python-3.11.9-embed-amd64
+	url = https://github.com/juandapradam12/PythonEmbeddable-3.11.9.git
