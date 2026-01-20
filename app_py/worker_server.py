@@ -8,6 +8,7 @@ import json
 import socket
 import sys
 import traceback
+import importlib.metadata as importlib_metadata
 from datetime import datetime
 from typing import Tuple
 
@@ -24,10 +25,43 @@ def safe_log(msg: str) -> None:
         pass
 
 
+def _get_version(pkg: str) -> str:
+    try:
+        return importlib_metadata.version(pkg)
+    except Exception:
+        return "unknown"
+
+
+def _inject_versions(result_json: str) -> str:
+    """Ensure library version info is present in the JSON payload."""
+    try:
+        data = json.loads(result_json)
+    except Exception:
+        return result_json
+
+    if isinstance(data, dict) and "libraries" not in data:
+        data["libraries"] = {
+            "python": sys.version.split()[0],
+            "pandas": _get_version("pandas"),
+            "numpy": _get_version("numpy"),
+            "sklearn": _get_version("scikit-learn"),
+            "matplotlib": _get_version("matplotlib"),
+            "seaborn": _get_version("seaborn"),
+            "psutil": _get_version("psutil"),
+            "python-dotenv": _get_version("python-dotenv"),
+        }
+
+    try:
+        return json.dumps(data, indent=2)
+    except Exception:
+        return result_json
+
+
 def process_file(file_path: str) -> str:
     """Use existing get_shape_from_file to process the file and return JSON string."""
     from main import get_shape_from_file  # local import; heavy libs already loaded at worker start
-    return get_shape_from_file(file_path)
+    raw = get_shape_from_file(file_path)
+    return _inject_versions(raw)
 
 
 def handle_connection(conn: socket.socket, addr: Tuple[str, int]) -> None:

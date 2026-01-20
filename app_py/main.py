@@ -7,9 +7,18 @@ Reads point cloud data and returns its shape (dimensions)
 import json
 import sys
 import time
+import importlib.metadata as importlib_metadata
 import pandas as pd
 from datetime import datetime
 from src.profiler.import_profiler import profiler
+
+
+def _get_version(pkg: str) -> str:
+    """Return package version or a placeholder on failure."""
+    try:
+        return importlib_metadata.version(pkg)
+    except Exception:
+        return "unknown"
 
 
 def get_shape_from_file(file_path: str) -> str:
@@ -44,6 +53,16 @@ def get_shape_from_file(file_path: str) -> str:
             "success": True,
             "timestamp": datetime.now().isoformat(),
             "file": file_path,
+            "libraries": {
+                "python": sys.version.split()[0],
+                "pandas": _get_version("pandas"),
+                "numpy": _get_version("numpy"),
+                "sklearn": _get_version("scikit-learn"),
+                "matplotlib": _get_version("matplotlib"),
+                "seaborn": _get_version("seaborn"),
+                "psutil": _get_version("psutil"),
+                "python-dotenv": _get_version("python-dotenv"),
+            },
             "shape": {
                 "rows": rows,
                 "columns": cols
