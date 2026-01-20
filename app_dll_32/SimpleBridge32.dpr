@@ -67,9 +67,9 @@ begin
                           StartupInfo, ProcessInfo) then
           begin
             try
-              // Adaptive timeout based on expected processing time
-              // Small datasets: 8s, Medium: 10s, Large: 15s
-              WaitResult := WaitForSingleObject(ProcessInfo.hProcess, 10000);
+              // Bump timeout to handle initial library imports in main.py (can take ~10s)
+              // Allow up to 30s so first-run imports don't trigger false timeouts
+              WaitResult := WaitForSingleObject(ProcessInfo.hProcess, 30000);
               if WaitResult = WAIT_OBJECT_0 then
               begin
                 GetExitCodeProcess(ProcessInfo.hProcess, ExitCode);
