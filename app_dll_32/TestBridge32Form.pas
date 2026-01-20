@@ -35,6 +35,7 @@ type
   private
     procedure LogMessage(const Msg: string);
     function LoadPointCloudToMemory(const FileName: string; out DataSize: Integer): Pointer;
+    procedure StartWorkerServer;
   public
   end;
 
@@ -57,6 +58,49 @@ begin
   Caption := 'Test CylinderBridge32.dll - Clean 32bit→64bit Architecture';
   EdtFilePath.Text := 'C:\CylinderCenterlineApp\data\input\Point Cloud - 76.2 mm OD - 25 points total.txt';
   LogMessage('Form initialized. Ready to test clean 32bit→64bit bridge.');
+  // Pre-warm the persistent Python worker so imports are loaded before first call
+  StartWorkerServer;
+end;
+
+procedure TFormTestBridge32.StartWorkerServer;
+var
+  RootDir, PyExe, WorkerScript, CmdLine: string;
+  SI: TStartupInfo;
+  PI: TProcessInformation;
+begin
+  try
+    // exe is typically in app_dll_32\Win32\Debug; go up two levels to project root
+    RootDir := TDirectory.GetParent(TDirectory.GetParent(ExtractFilePath(ParamStr(0))));
+    PyExe := TPath.Combine(RootDir, 'app_py\venv\Scripts\python.exe');
+    WorkerScript := TPath.Combine(RootDir, 'app_py\worker_server.py');
+
+    if (not FileExists(PyExe)) or (not FileExists(WorkerScript)) then
+    begin
+      LogMessage('Pre-warm skipped: Python venv or worker_server.py not found');
+      Exit;
+    end;
+
+    ZeroMemory(@SI, SizeOf(SI));
+    SI.cb := SizeOf(SI);
+    SI.dwFlags := STARTF_USESHOWWINDOW;
+    SI.wShowWindow := SW_HIDE;
+
+    CmdLine := Format('"%s" "%s" --serve', [PyExe, WorkerScript]);
+
+    if CreateProcess(nil, PChar(CmdLine), nil, nil, False,
+                     CREATE_NO_WINDOW or NORMAL_PRIORITY_CLASS, nil,
+                     PChar(RootDir), SI, PI) then
+    begin
+      CloseHandle(PI.hThread);
+      CloseHandle(PI.hProcess);
+      LogMessage('Pre-warm: worker_server started');
+    end
+    else
+      LogMessage('Pre-warm: failed to start worker_server');
+  except
+    on E: Exception do
+      LogMessage('Pre-warm error: ' + E.Message);
+  end;
 end;
 
 procedure TFormTestBridge32.BtnGetVersionClick(Sender: TObject);
