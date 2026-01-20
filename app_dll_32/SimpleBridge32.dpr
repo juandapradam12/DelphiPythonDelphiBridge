@@ -43,11 +43,16 @@ begin
         // Just copy the original file path instead of processing binary data
         TempFile := string(PAnsiChar(PointData));  // Assume PointData contains the file path
         
-        Command := Format('"%s\app_dll_32\run_python_to_file.bat" "%s" "%s"', ['C:\CylinderCenterlineApp', TempFile, OutputFile]);
+        // Find the batch file relative to the DLL location
+        var DllDir := TPath.GetDirectoryName(GetModuleName(HInstance));
+        var BatchFile := TPath.Combine(DllDir, 'run_python_to_file.bat');
+        var WorkDir := TPath.GetDirectoryName(BatchFile);
         
-        if not FileExists('C:\CylinderCenterlineApp\app_dll_32\run_python_to_file.bat') then
+        Command := Format('"%s" "%s" "%s"', [BatchFile, TempFile, OutputFile]);
+        
+        if not FileExists(BatchFile) then
         begin
-          JsonResult := '{"success": false, "error": "run_python_to_file.bat not found"}';
+          JsonResult := '{"success": false, "error": "run_python_to_file.bat not found at: ' + BatchFile + '"}';
         end
         else
         begin
@@ -58,7 +63,7 @@ begin
           
           if CreateProcess(nil, PChar(Command), nil, nil, False, 
                           CREATE_NO_WINDOW or NORMAL_PRIORITY_CLASS, nil, 
-                          PChar('C:\CylinderCenterlineApp\app_dll_32'), 
+                          PChar(WorkDir), 
                           StartupInfo, ProcessInfo) then
           begin
             try
