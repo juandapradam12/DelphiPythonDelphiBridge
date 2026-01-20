@@ -71,4 +71,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     result = get_shape_from_file(sys.argv[1])
+    # Print with delimiters for Delphi bridge extraction
+    print("============================================================")
     print(result)
+    print("============================================================")
